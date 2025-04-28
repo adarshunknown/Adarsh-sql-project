@@ -1,98 +1,144 @@
-# sql imdb project
--- 1. Retrieve all movies along with their directors.
-ans. select names.name, movie.title from movie inner join director_mapping on movie.id = director_mapping.movie_id inner join names on names.id = director_mapping.name_id;
+# IMDb SQL Project
+# 📚 Project Description
+This project involves solving a comprehensive set of SQL queries on an IMDb movie dataset.
+It covers:
+1.Basic Joins
+2.Inner Joins
+3.Left Joins
+4.Right Joins
+5.Complex Joins (Multiple Joins)
+6..Partition By and Window Functions
 
--- 2. Get all movies and their genres.
-ans. select genre.genre, movie.title from movie inner join genre on movie.id = genre.movie_id;
+The goal is to practice and demonstrate SQL skills using real-world movie data.
 
--- 3. List all actors along with the movies they have acted in.
-ans. select names.name, movie.title from movie inner join role_mapping on movie.id = role_mapping.movie_id inner join names on names.id = role_mapping.name_id where role_mapping.category = "actor";
+# 📂 Dataset Description
+The dataset includes the following tables (provided separately as CSV files):
 
--- 4. Get all movies and their corresponding writers.
-ans. select title, production_company from movie;
+movie: Information about movies (title, production company, country, duration, year, etc.)
 
--- 5. Retrieve all users who have rated movies along with the rating they provided.
-ans. select ratings.total_votes, ratings.avg_rating, movie.title from movie inner join ratings on movie.id = ratings.movie_id;
+genre: Movie genres mapped to movies
 
-# Inner Joins
--- 1. Find the names of actors who have acted in at least one movie.
-ans. select names.name, count(movie.title) from names inner join role_mapping on names.id = role_mapping.name_id inner join movie on movie.id = role_mapping.movie_id where role_mapping.category = "actor" group by names.name having count(movie.title) >= 1;
+director_mapping: Mapping of directors to movies
 
--- 2. List all directors who have directed more than 5 movies.
-ans. select names.name, count(movie.title) as c from names inner join director_mapping on director_mapping.name_id = names.id inner join movie on movie.id = director_mapping.movie_id group by names.name having c > 5;
+role_mapping: Mapping of actors and other roles to movies
 
--- 3. Retrieve all movies that have at least one review.
-ans. select movie.title, count(ratings.total_votes) as c from movie inner join ratings on movie.id = ratings.movie_id group by movie.title having c >= 1;
+names: Names of people involved (directors, actors, writers)
 
--- 4. Get a list of all movies along with their production company names.
-ans. select m.title, n.production_company from movie as m inner join movie as n on m.id = n.id;
+ratings: IMDb ratings and total votes for each movie
 
--- 5. Fetch all movies with their country of origin.
-ans. select m.title, n.country from movie as m inner join movie as n on m.id = n.id;
+# 🛢️ Database Schema and Relationships
+The IMDb database is structured with six main tables.
+Here’s how they are connected:
 
-# Left Joins
--- 1. List all movies, even those without ratings.
-ans. select movie.title, ratings.avg_rating from movie left outer join ratings on movie.id = ratings.movie_id;
+1. Table: movie
+Primary Key: id
+Columns: id, title, date_published, duration, country, worlwide_gross_income, production_company, etc.
 
--- 2. Retrieve all actors, even those who have not acted in any movie.
-ans. select names.name from names inner join role_mapping on names.id = role_mapping.name_id left outer join movie on movie.id = role_mapping.movie_id where role_mapping.category = "actor";
+Description: Stores all movie-related information.
 
--- 3. Get all directors, including those who haven't directed any movies.
-ans. select names.name from names inner join role_mapping on names.id = role_mapping.name_id left outer join movie on movie.id = role_mapping.movie_id;
+2. Table: names
+Primary Key: id
+Columns: id, name
 
-# Right Joins
--- 1. Find all movies and ensure that genres are included even if no movies belong to that genre.
-ans. select movie.title, genre.genre from movie right outer join genre on movie.id = genre.movie_id;
+Description: Stores names of individuals (actors, directors, writers).
 
--- 2. Get all movies and ensure all countries are listed even if no movie was produced there.
-ans. select m.title, n.country from movie as m right outer join movie as n on m.id = n.id;
+3. Table: director_mapping
+Composite Key: (movie_id, name_id)
+Columns: movie_id (FK), name_id (FK)
 
--- 3. Retrieve all writers and ensure that movies written by them (if any) are included.
-ans. select movie.title, ratings.avg_rating from movie right outer join ratings on movie.id = ratings.movie_id;
+Foreign Keys:
+movie_id → movie.id
+name_id → names.id
 
--- 4. List all reviews and the movies they belong to, including reviews without associated movies.
-ans. select m.title, n.production_company from movie as m right outer join movie as n on m.id = n.id;
+Description: Maps directors to the movies they directed.
 
-# Complex Joins
--- 1. Retrieve the top 5 highest-rated movies along with their directors and genres.
-ans. select movie.title, names.name, genre.genre, ratings.avg_rating from names inner join director_mapping on names.id = director_mapping.name_id inner join movie on movie.id = director_mapping.movie_id inner join ratings on ratings.movie_id = movie.id inner join genre on genre.movie_id = movie.id order by ratings.avg_rating desc limit 5;
+4. Table: role_mapping
+Composite Key: (movie_id, name_id, category)
+Columns: movie_id (FK), name_id (FK), category
 
--- 2. Find actors who have worked with the same director in at least 3 movies.
-ans. select s.director, t.actor, count(*) as m from (select names.name as director, director_mapping.movie_id as id from names inner join director_mapping on names.id = director_mapping.name_id) as s inner join (select names.name as actor, role_mapping.movie_id as id from names inner join role_mapping on names.id = role_mapping.name_id inner join movie on movie.id = role_mapping.movie_id) as t on s.id = t.id group by s.director, t.actor having m >= 3;
+Foreign Keys:
+movie_id → movie.id
+name_id → names.id
 
--- 4. List all directors and the actors they have worked with, even if they directed only one movie.
-ans. select s.director, t.actor, count(*) from (select names.name as director, director_mapping.movie_id as id from names inner join director_mapping on names.id = director_mapping.name_id) as s inner join (select names.name as actor, role_mapping.movie_id as id from names inner join role_mapping on names.id = role_mapping.name_id inner join movie on movie.id = role_mapping.movie_id) as t on s.id = t.id group by s.director, t.actor having count(*) >= 1;
+Description: Maps actors (and other roles) to movies.
+(Category defines if it's an 'actor', 'actress', etc.)
 
--- 5. Retrieve all movies with their genres, directors, in one query.
-ans. select movie.title, names.name, genre.genre from names inner join director_mapping on names.id = director_mapping.name_id inner join movie on movie.id = director_mapping.movie_id inner join genre on movie.id = genre.movie_id;
+5. Table: genre
+Primary Key: Auto-increment or Composite Key (movie_id, genre)
+Columns: movie_id (FK), genre
 
-# Partition By and Window Function Questions
--- 1. Retrieve the top 5 highest-rated movies per genre using RANK().
-ans. select a.title, a.avg_rating from (select movie.title, ratings.avg_rating, rank() over (partition by genre.genre order by ratings.avg_rating desc) as pro from movie inner join ratings on movie.id = ratings.movie_id inner join genre on movie.id = genre.movie_id) as a where a.pro <= 5;
+Foreign Key:
+movie_id → movie.id
+Description: Lists genres associated with each movie.
 
--- 2. Find the cumulative revenue for each movie ordered by release date using SUM() OVER().
-ans. select date_published, title, sum(duration) over (order by date_published, title) as revenue from movie;
+6. Table: ratings
+Primary Key: movie_id
+Columns: movie_id (FK), avg_rating, total_votes
 
--- 3. Get the previous movie rating for each movie using LAG().
-ans. select movie.title, ratings.avg_rating, lag(avg_rating) over (partition by movie.title order by movie.date_published) as previous from movie inner join ratings on movie.id = ratings.movie_id;
+Foreign Key:
+movie_id → movie.id
 
--- 4. Get the next movie rating for each movie using LEAD().
-ans. select movie.title, ratings.avg_rating, lead(avg_rating) over (order by movie.date_published) as next from movie inner join ratings on movie.id = ratings.movie_id;
+Description: Stores IMDb rating and votes for each movie.
 
--- 5. Retrieve the average movie rating per genre using AVG() OVER(PARTITION BY genre).
-ans. select movie.title, genre.genre, avg(ratings.avg_rating) over (partition by genre.genre) as m from movie inner join ratings on movie.id = ratings.movie_id inner join genre on movie.id = genre.movie_id;
+# 📄 SQL Query Sections
+--Basic Joins
+1.Retrieve all movies along with their directors
+2.Get all movies and their genres
+3.List all actors along with the movies they have acted in
+4.Get all movies and their corresponding writers
+5.Retrieve all users who have rated movies along with the rating they provided
 
--- 6. Rank movies within each genre based on IMDb rating using DENSE_RANK().
-ans. select movie.title, genre.genre, ratings.avg_rating, dense_rank() over (partition by genre.genre order by ratings.avg_rating) as d from movie inner join ratings on movie.id = ratings.movie_id inner join genre on movie.id = genre.movie_id;
+--Inner Joins
+1.Find names of actors who have acted in at least one movie
+2.List directors who have directed more than 5 movies
+3.Retrieve movies that have at least one review
+4.List movies along with production company names
+5.Fetch movies with their country of origin
 
--- 7. Find the running total of box office earnings for movies released after 2000.
-ans. select title, year, worlwide_gross_income from movie where year > 2000 order by year;
+--Left Joins
+1.List all movies, even those without ratings
+2.Retrieve all actors, even those who have not acted in any movie
+3.Get all directors, including those who haven't directed any movies
 
--- 8. Find the first and last movie released for each director using FIRST_VALUE() and LAST_VALUE().
-ans. select names.name, movie.title, first_value(movie.title) over (partition by names.name) as first, last_value(movie.title) over (partition by names.name) as last from movie inner join director_mapping on movie.id = director_mapping.movie_id inner join names on names.id = director_mapping.name_id;
+--Right Joins
+1.Find all movies and ensure genres are included even if no movies belong to that genre
+2.Get all movies and ensure all countries are listed even if no movie was produced there
+3.Retrieve all writers and ensure that movies written by them are included
+4.List all reviews and the movies they belong to
 
--- 9. Compute the difference in box office earnings between each movie and the previous one for a director.
-ans. select movie.title, movie.date_published, (lag(movie.duration) over (partition by movie.date_published)) - movie.duration from movie;
+--Complex Joins
+1.Retrieve top 5 highest-rated movies along with their directors and genres
+2.Find actors who have worked with the same director in at least 3 movies
+3.List all directors and the actors they have worked with
+4.Retrieve all movies with their genres and directors in one query
 
--- 10. Find the total number of movies each actor has acted in using COUNT() OVER(PARTITION BY actor_name).
-ans. select names.name, movie.title, count(movie.title) over (partition by names.name) as noofmovies from movie inner join role_mapping on movie.id = role_mapping.movie_id inner join names on names.id = role_mapping.name_id where role_mapping.category = "actor";
+--Partition By and Window Function Queries
+1.Retrieve top 5 highest-rated movies per genre using RANK()
+2.Find cumulative revenue ordered by release date using SUM() OVER()
+3.Get previous movie rating using LAG()
+4.Get next movie rating using LEAD()
+5.Retrieve average movie rating per genre
+6.Rank movies within each genre using DENSE_RANK()
+7.Find running total of box office earnings for movies after 2000
+8.Find first and last movie released for each director
+9.Compute difference in box office earnings between consecutive movies
+10.Find total number of movies each actor has acted in
+
+# 🛠️ Tools Used
+SQL (MySQL, PostgreSQL, or any RDBMS)
+IMDb Dataset (CSV files)
+
+# 📋 How to Run
+1.Import all CSV files into your SQL database.
+2.Create respective tables (movie, genre, names, director_mapping, role_mapping, ratings).
+3.Execute the SQL queries provided in the project.
+4.Analyze the results for insights.
+
+# 📌 Notes
+1.Right join queries assume movie attributes (like genre, country) might exist independently.
+2.Window functions are used for advanced analysis (rankings, running totals, comparisons).
+3.Some simplifications are made for project practice purposes.
+
+# ✨ Credits
+1,Dataset used: Provided IMDb Dataset
+Project designed and implemented by Adarsh Gouda.
